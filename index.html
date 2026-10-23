@@ -4,34 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alphagen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
+  :root { --accent: #4f46e5; --grad: linear-gradient(135deg, #6366f1, #9333ea); --border: #e5e7eb; --muted: #6b7280; }
+  html { background: linear-gradient(135deg, #eef2ff, #faf5ff) fixed; }
   /* Fixed viewport layout: each card gets a third of the screen, so filling or filtering a history never resizes anything */
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 0 1rem; color: #222;
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 0 1rem; color: #1f2937;
          height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; }
-  h1 { margin: .5rem 0; font-size: 1.3rem; }
-  .card { border: 1px solid #ccc; border-radius: 8px; padding: .6rem; margin-bottom: .5rem;
-          flex: 1 1 0; min-height: 12rem; display: flex; flex-direction: column; gap: .4rem; }
-  .card h2 { margin: 0; font-size: 1.1rem; }
-  .hist { flex: 1; min-height: 0; overflow-y: scroll; border: 1px solid #eee; }
+  h1 { margin: .6rem 0 .5rem; font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; color: var(--accent); }
+  h1 svg { height: .62em; vertical-align: -.02em; margin-right: .03em; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: .7rem .9rem; margin-bottom: .6rem;
+          box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 6px 20px rgb(79 70 229 / .07);
+          flex: 1 1 0; min-height: 12rem; display: flex; flex-direction: column; gap: .45rem; }
+  .card h2 { margin: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .hist { flex: 1; min-height: 0; overflow-y: scroll; border: 1px solid var(--border); border-radius: 10px;
+          scrollbar-width: thin; scrollbar-color: #c7d2fe transparent; }
   .hist table { table-layout: fixed; }
-  .hist th { position: sticky; top: 0; background: #f6f6f6; }
-  .hist td, .hist th { padding: .15rem .3rem; }
-  .hist button { padding: .1rem .6rem; }
-  .filter { flex: 1; padding: .3rem; }
+  .hist th { position: sticky; top: 0; background: #f5f3ff; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+  .hist td, .hist th { padding: .2rem .5rem; }
+  .hist tbody tr:hover { background: #fafaff; }
+  .hist button { padding: .1rem .5rem; font-size: .8rem; }
+  .filter { flex: 1; }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-  .out { flex: 1; min-width: 220px; font: 1rem monospace; padding: .4rem; }
-  button { padding: .4rem .8rem; cursor: pointer; }
-  [aria-pressed="true"] { background: #2563eb; color: #fff; border-color: #2563eb; }
-  dialog { max-width: 700px; }
+  .out { flex: 1; min-width: 220px; font-family: ui-monospace, monospace; }
+  input { font: inherit; font-size: .95rem; padding: .4rem .6rem; border: 1px solid var(--border); border-radius: 8px; background: #f9fafb; }
+  input:focus { outline: 2px solid #c7d2fe; border-color: var(--accent); background: #fff; }
+  .out:focus { outline: none; }
+  button { font: inherit; font-size: .9rem; padding: .4rem .8rem; cursor: pointer; color: inherit; background: #fff;
+           border: 1px solid var(--border); border-radius: 8px; }
+  button:hover { background: #eef2ff; border-color: #c7d2fe; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .primary { background: var(--grad); color: #fff; border-color: transparent; font-weight: 600; }
+  .primary:hover { background: var(--grad); filter: brightness(1.1); border-color: transparent; }
+  [aria-pressed="true"], [aria-pressed="true"]:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  dialog { max-width: 700px; border: none; border-radius: 14px; padding: 1.2rem; box-shadow: 0 20px 50px rgb(0 0 0 / .25); }
+  dialog::backdrop { background: rgb(17 24 39 / .4); backdrop-filter: blur(2px); }
+  dialog h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .toggles { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: 1rem; }
   .toggles button { min-width: 3.2rem; }
   table { width: 100%; border-collapse: collapse; }
-  td, th { text-align: left; padding: .3rem; border-bottom: 1px solid #eee; }
-  td.v { font-family: monospace; }
+  td, th { text-align: left; padding: .3rem; border-bottom: 1px solid #f1f1f4; }
+  td.v { font-family: ui-monospace, monospace; }
+  footer { text-align: center; color: var(--muted); font-size: .8rem; padding: .1rem 0 .5rem; }
 </style>
 </head>
 <body>
-<h1>Alphagen</h1>
+<h1><svg viewBox="4 7 23 18" role="img" aria-label="A"><path d="M23 9.5C21 17 18.5 23 13 23S6 19.5 6 16 8.5 9 13 9s7 6 8.5 10.5c.8 2.4 1.8 3.5 3.5 3.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>lphagen</h1>
 
 <section class="card">
   <h2>IMEI</h2>
@@ -41,7 +59,7 @@
       <button type="button" aria-pressed="false" data-v="iphone">iPhone</button>
     </div>
     <input class="out" id="imeiOut" readonly aria-label="IMEI">
-    <button id="imeiGen">Generate &amp; Copy</button>
+    <button class="primary" id="imeiGen">Generate &amp; Copy</button>
   </div>
   <div class="row">
     <input class="filter" id="imeiFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter IMEI history by date">
@@ -58,7 +76,7 @@
   <div class="row">
     <button id="stateBtn">States: <span id="stateSummary">Any</span></button>
     <input class="out" id="addrOut" readonly aria-label="Address">
-    <button id="addrGen">Generate &amp; Copy</button>
+    <button class="primary" id="addrGen">Generate &amp; Copy</button>
   </div>
   <div class="row">
     <input class="filter" id="addrFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter address history by date">
@@ -74,7 +92,7 @@
   <h2>Phone (US / Canada)</h2>
   <div class="row">
     <input class="out" id="phoneOut" readonly aria-label="Phone">
-    <button id="phoneGen">Generate &amp; Copy</button>
+    <button class="primary" id="phoneGen">Generate &amp; Copy</button>
   </div>
   <div class="row">
     <input class="filter" id="phoneFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter phone history by date">
@@ -95,13 +113,16 @@
     <div class="toggles" role="group" aria-label="Canadian provinces" id="caToggles"></div>
     <div class="row">
       <button type="button" id="stateNone">Clear selection</button>
-      <button>Done</button>
+      <button class="primary">Done</button>
     </div>
   </form>
 </dialog>
 
+<footer>© <span id="year"></span> Alphagen</footer>
+
 <script>
 const $ = id => document.getElementById(id);
+$('year').textContent = new Date().getFullYear();
 const rnd = n => Math.floor(Math.random() * n);
 const pick = a => a[rnd(a.length)];
 const digits = n => Array.from({ length: n }, () => rnd(10)).join('');
