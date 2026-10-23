@@ -6,18 +6,18 @@
 <title>Alphagen</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
-  :root { --accent: #4f46e5; --grad: linear-gradient(135deg, #6366f1, #9333ea); --border: #e5e7eb; --muted: #6b7280; }
+  :root { --accent: #5a67d8; --border: #e5e7eb; --muted: #6b7280; }
   html { background: linear-gradient(135deg, #eef2ff, #faf5ff) fixed; }
   /* Fixed viewport layout: each card gets a third of the screen, so filling or filtering a history never resizes anything */
   body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 0 1rem; color: #1f2937;
          height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; }
   h1 { margin: .6rem 0 .5rem; font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; color: var(--accent); }
   h1 svg { height: .62em; vertical-align: -.02em; margin-right: .03em; }
-  .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: .7rem .9rem; margin-bottom: .6rem;
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: .7rem .9rem; margin-bottom: .6rem;
           box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 6px 20px rgb(79 70 229 / .07);
           flex: 1 1 0; min-height: 12rem; display: flex; flex-direction: column; gap: .45rem; }
   .card h2 { margin: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  .hist { flex: 1; min-height: 0; overflow-y: scroll; border: 1px solid var(--border); border-radius: 10px;
+  .hist { flex: 1; min-height: 0; overflow-y: scroll; border: 1px solid var(--border); border-radius: 4px;
           scrollbar-width: thin; scrollbar-color: #c7d2fe transparent; }
   .hist table { table-layout: fixed; }
   .hist th { position: sticky; top: 0; background: #f5f3ff; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
@@ -27,17 +27,17 @@
   .filter { flex: 1; }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .out { flex: 1; min-width: 220px; font-family: ui-monospace, monospace; }
-  input { font: inherit; font-size: .95rem; padding: .4rem .6rem; border: 1px solid var(--border); border-radius: 8px; background: #f9fafb; }
+  input { font: inherit; font-size: .95rem; padding: .4rem .6rem; border: 1px solid var(--border); border-radius: 4px; background: #f9fafb; }
   input:focus { outline: 2px solid #c7d2fe; border-color: var(--accent); background: #fff; }
   .out:focus { outline: none; }
   button { font: inherit; font-size: .9rem; padding: .4rem .8rem; cursor: pointer; color: inherit; background: #fff;
-           border: 1px solid var(--border); border-radius: 8px; }
+           border: 1px solid var(--border); border-radius: 4px; }
   button:hover { background: #eef2ff; border-color: #c7d2fe; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .primary { background: var(--grad); color: #fff; border-color: transparent; font-weight: 600; }
-  .primary:hover { background: var(--grad); filter: brightness(1.1); border-color: transparent; }
+  .primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .primary:hover { background: #4c51bf; border-color: #4c51bf; }
   [aria-pressed="true"], [aria-pressed="true"]:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-  dialog { max-width: 700px; border: none; border-radius: 14px; padding: 1.2rem; box-shadow: 0 20px 50px rgb(0 0 0 / .25); }
+  dialog { max-width: 700px; border: none; border-radius: 6px; padding: 1.2rem; box-shadow: 0 20px 50px rgb(0 0 0 / .25); }
   dialog::backdrop { background: rgb(17 24 39 / .4); backdrop-filter: blur(2px); }
   dialog h3 { font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .toggles { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: 1rem; }
