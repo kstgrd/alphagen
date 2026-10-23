@@ -5,9 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alphagen</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
-  .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-  .card h2 { margin: 0 0 .5rem; font-size: 1.1rem; }
+  /* Fixed viewport layout: each card gets a third of the screen, so filling or filtering a history never resizes anything */
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 0 1rem; color: #222;
+         height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; }
+  h1 { margin: .5rem 0; font-size: 1.3rem; }
+  .card { border: 1px solid #ccc; border-radius: 8px; padding: .6rem; margin-bottom: .5rem;
+          flex: 1 1 0; min-height: 12rem; display: flex; flex-direction: column; gap: .4rem; }
+  .card h2 { margin: 0; font-size: 1.1rem; }
+  .hist { flex: 1; min-height: 0; overflow-y: scroll; border: 1px solid #eee; }
+  .hist table { table-layout: fixed; }
+  .hist th { position: sticky; top: 0; background: #f6f6f6; }
+  .hist td, .hist th { padding: .15rem .3rem; }
+  .hist button { padding: .1rem .6rem; }
+  .filter { flex: 1; padding: .3rem; }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
   .out { flex: 1; min-width: 220px; font: 1rem monospace; padding: .4rem; }
   button { padding: .4rem .8rem; cursor: pointer; }
@@ -33,6 +43,14 @@
     <input class="out" id="imeiOut" readonly aria-label="IMEI">
     <button id="imeiGen">Generate &amp; Copy</button>
   </div>
+  <div class="row">
+    <input class="filter" id="imeiFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter IMEI history by date">
+    <button id="imeiClear" aria-label="Clear IMEI filter">✕</button>
+  </div>
+  <div class="hist"><table>
+    <thead><tr><th style="width:9.5rem">Date</th><th style="width:5rem">Type</th><th>IMEI</th><th style="width:5rem"></th></tr></thead>
+    <tbody id="imeiHist"></tbody>
+  </table></div>
 </section>
 
 <section class="card">
@@ -42,6 +60,14 @@
     <input class="out" id="addrOut" readonly aria-label="Address">
     <button id="addrGen">Generate &amp; Copy</button>
   </div>
+  <div class="row">
+    <input class="filter" id="addrFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter address history by date">
+    <button id="addrClear" aria-label="Clear address filter">✕</button>
+  </div>
+  <div class="hist"><table>
+    <thead><tr><th style="width:9.5rem">Date</th><th>Name + Address</th><th style="width:5rem"></th></tr></thead>
+    <tbody id="addrHist"></tbody>
+  </table></div>
 </section>
 
 <section class="card">
@@ -50,18 +76,14 @@
     <input class="out" id="phoneOut" readonly aria-label="Phone">
     <button id="phoneGen">Generate &amp; Copy</button>
   </div>
-</section>
-
-<section class="card">
-  <h2>History</h2>
-  <div class="row" style="margin-bottom:.5rem">
-    <input id="filter" placeholder="dd/mm/yyyy hh:mm" aria-label="Filter by date" style="flex:1;padding:.4rem">
-    <button id="filterClear" aria-label="Clear filter">✕</button>
+  <div class="row">
+    <input class="filter" id="phoneFilter" placeholder="Filter: dd/mm/yyyy hh:mm" aria-label="Filter phone history by date">
+    <button id="phoneClear" aria-label="Clear phone filter">✕</button>
   </div>
-  <table>
-    <thead><tr><th>Date</th><th>Type</th><th>Value</th><th></th></tr></thead>
-    <tbody id="history"></tbody>
-  </table>
+  <div class="hist"><table>
+    <thead><tr><th style="width:9.5rem">Date</th><th>Phone</th><th style="width:5rem"></th></tr></thead>
+    <tbody id="phoneHist"></tbody>
+  </table></div>
 </section>
 
 <dialog id="stateDialog">
@@ -181,11 +203,16 @@ function copy(text, btn) {
   });
 }
 
-function render() {
-  const f = $('filter').value.trim();
-  $('history').replaceChildren(...history.filter(h => fmt(h.ts).startsWith(f)).map(h => {
+// One stored list; each record's type decides which group's history shows it
+const groupOf = h => h.type.startsWith('IMEI') ? 'imei' : h.type === 'Address' ? 'addr' : 'phone';
+const GROUPS = ['imei', 'addr', 'phone'];
+
+function render(g) {
+  const f = $(g + 'Filter').value.trim();
+  $(g + 'Hist').replaceChildren(...history.filter(h => groupOf(h) === g && fmt(h.ts).startsWith(f)).map(h => {
     const tr = document.createElement('tr');
-    for (const [t, cls] of [[fmt(h.ts)], [h.type], [h.value, 'v']]) {
+    const cells = g === 'imei' ? [[fmt(h.ts)], [h.type === 'IMEI (iPhone)' ? 'iPhone' : 'Generic'], [h.value, 'v']] : [[fmt(h.ts)], [h.value, 'v']];
+    for (const [t, cls] of cells) {
       const td = tr.insertCell();
       td.textContent = t;
       if (cls) td.className = cls;
@@ -203,7 +230,7 @@ function generate(type, outId, value, btn) {
   copy(value, btn);
   history.unshift({ type, value, ts: Date.now() });
   localStorage.setItem(KEY, JSON.stringify(history));
-  render();
+  render(outId.replace('Out', ''));
 }
 
 // Toggle groups
@@ -236,10 +263,11 @@ $('imeiGen').onclick = () => {
 };
 $('addrGen').onclick = () => generate('Address', 'addrOut', `${fullName()}, ${address(selectedStates())}`, $('addrGen'));
 $('phoneGen').onclick = () => generate('Phone', 'phoneOut', phone(), $('phoneGen'));
-$('filter').oninput = render;
-$('filterClear').onclick = () => { $('filter').value = ''; render(); $('filter').focus(); };
-
-render();
+for (const g of GROUPS) {
+  $(g + 'Filter').oninput = () => render(g);
+  $(g + 'Clear').onclick = () => { $(g + 'Filter').value = ''; render(g); $(g + 'Filter').focus(); };
+  render(g);
+}
 </script>
 </body>
 </html>
