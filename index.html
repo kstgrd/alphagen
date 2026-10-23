@@ -37,7 +37,7 @@
 </section>
 
 <section class="card">
-  <h2>Address (US / Canada)</h2>
+  <h2>Name + Address (US / Canada)</h2>
   <div class="row">
     <button id="stateBtn">States: <span id="stateSummary">Any</span></button>
     <input class="out" id="addrOut" readonly aria-label="Address">
@@ -147,6 +147,18 @@ function address(selected) {
   return `${1 + rnd(9999)} ${pick(STREETS)}, ${city}, ${code} ${postal}`;
 }
 
+// Ubuntu release codenames; names mix an adjective and animal sharing a first letter, Ubuntu style
+const UBUNTU = ('Warty Warthog|Hoary Hedgehog|Breezy Badger|Dapper Drake|Edgy Eft|Feisty Fawn|Gutsy Gibbon|Hardy Heron|Intrepid Ibex|'
+  + 'Jaunty Jackalope|Karmic Koala|Lucid Lynx|Maverick Meerkat|Natty Narwhal|Oneiric Ocelot|Precise Pangolin|Quantal Quetzal|'
+  + 'Raring Ringtail|Saucy Salamander|Trusty Tahr|Utopic Unicorn|Vivid Vervet|Wily Werewolf|Xenial Xerus|Yakkety Yak|Zesty Zapus|'
+  + 'Artful Aardvark|Bionic Beaver|Cosmic Cuttlefish|Disco Dingo|Eoan Ermine|Focal Fossa|Groovy Gorilla|Hirsute Hippo|Impish Indri|'
+  + 'Jammy Jellyfish|Kinetic Kudu|Lunar Lobster|Mantic Minotaur|Noble Numbat|Oracular Oriole|Plucky Puffin|Questing Quokka')
+  .split('|').map(s => s.split(' '));
+function fullName() {
+  const [first] = pick(UBUNTU);
+  return `${first} ${pick(UBUNTU.filter(([a]) => a[0] === first[0]))[1]}`;
+}
+
 // Real, assigned area codes (US + Canada)
 const AREA = ('205 907 602 501 213 415 619 303 203 302 202 305 407 404 808 208 312 317 515 316 502 504 207 410 617 313 612 601 816 406 402 702 603 201 505 212 704 701 614 405 503 215 401 803 605 615 713 214 512 469 801 802 804 206 304 414 307 '
   + '403 780 604 250 204 506 709 902 867 416 647 613 514 418 306 905').split(' ');
@@ -224,7 +236,7 @@ $('imeiGen').onclick = () => {
   const type = document.querySelector('#imeiType [aria-pressed="true"]').dataset.v;
   generate(type === 'iphone' ? 'IMEI (iPhone)' : 'IMEI', 'imeiOut', imei(type));
 };
-$('addrGen').onclick = () => generate('Address', 'addrOut', address(selectedStates()));
+$('addrGen').onclick = () => generate('Address', 'addrOut', `${fullName()}, ${address(selectedStates())}`);
 $('phoneGen').onclick = () => generate('Phone', 'phoneOut', phone());
 document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => $(b.dataset.copy).value && copy($(b.dataset.copy).value, b));
 $('filter').oninput = render;
