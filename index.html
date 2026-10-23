@@ -48,7 +48,7 @@
     <button id="imeiClear" aria-label="Clear IMEI filter">✕</button>
   </div>
   <div class="hist"><table>
-    <thead><tr><th style="width:9.5rem">Date</th><th style="width:5rem">Type</th><th>IMEI</th><th style="width:5rem"></th></tr></thead>
+    <thead><tr><th style="width:9.5rem">Date</th><th style="width:5rem">Type</th><th>IMEI</th><th style="width:5rem"></th><th style="width:6rem"></th></tr></thead>
     <tbody id="imeiHist"></tbody>
   </table></div>
 </section>
@@ -65,7 +65,7 @@
     <button id="addrClear" aria-label="Clear address filter">✕</button>
   </div>
   <div class="hist"><table>
-    <thead><tr><th style="width:9.5rem">Date</th><th>Name + Address</th><th style="width:5rem"></th></tr></thead>
+    <thead><tr><th style="width:9.5rem">Date</th><th>Name + Address</th><th style="width:5rem"></th><th style="width:6rem"></th></tr></thead>
     <tbody id="addrHist"></tbody>
   </table></div>
 </section>
@@ -81,7 +81,7 @@
     <button id="phoneClear" aria-label="Clear phone filter">✕</button>
   </div>
   <div class="hist"><table>
-    <thead><tr><th style="width:9.5rem">Date</th><th>Phone</th><th style="width:5rem"></th></tr></thead>
+    <thead><tr><th style="width:9.5rem">Date</th><th>Phone</th><th style="width:5rem"></th><th style="width:6rem"></th></tr></thead>
     <tbody id="phoneHist"></tbody>
   </table></div>
 </section>
@@ -206,6 +206,8 @@ function copy(text, btn) {
 // One stored list; each record's type decides which group's history shows it
 const groupOf = h => h.type.startsWith('IMEI') ? 'imei' : h.type === 'Address' ? 'addr' : 'phone';
 const GROUPS = ['imei', 'addr', 'phone'];
+const save = () => localStorage.setItem(KEY, JSON.stringify(history));
+const button = (textContent, title, onclick) => Object.assign(document.createElement('button'), { textContent, title, onclick });
 
 function render(g) {
   const f = $(g + 'Filter').value.trim();
@@ -217,10 +219,13 @@ function render(g) {
       td.textContent = t;
       if (cls) td.className = cls;
     }
-    const b = document.createElement('button');
-    b.textContent = 'Copy';
-    b.onclick = () => copy(h.value, b);
+    const b = button('Copy', 'Copy', () => copy(h.value, b));
     tr.insertCell().append(b);
+    const del = tr.insertCell();
+    const trash = button('🗑️', 'Delete', () => del.replaceChildren(
+      button('✅', 'Confirm delete', () => { history.splice(history.indexOf(h), 1); save(); render(g); }),
+      button('❌', 'Cancel delete', () => del.replaceChildren(trash))));
+    del.append(trash);
     return tr;
   }));
 }
@@ -229,7 +234,7 @@ function generate(type, outId, value, btn) {
   $(outId).value = value;
   copy(value, btn);
   history.unshift({ type, value, ts: Date.now() });
-  localStorage.setItem(KEY, JSON.stringify(history));
+  save();
   render(outId.replace('Out', ''));
 }
 
