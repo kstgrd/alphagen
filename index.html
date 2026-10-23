@@ -222,9 +222,10 @@ function render(g) {
     const b = button('Copy', 'Copy', () => copy(h.value, b));
     tr.insertCell().append(b);
     const del = tr.insertCell();
+    // Cancel sits where 🗑️ was, so a double click can't delete; confirming needs a deliberate mouse move
     const trash = button('🗑️', 'Delete', () => del.replaceChildren(
-      button('✅', 'Confirm delete', () => { history.splice(history.indexOf(h), 1); save(); render(g); }),
-      button('❌', 'Cancel delete', () => del.replaceChildren(trash))));
+      button('❌', 'Cancel delete', () => del.replaceChildren(trash)),
+      button('✅', 'Confirm delete', () => { history.splice(history.indexOf(h), 1); save(); render(g); })));
     del.append(trash);
     return tr;
   }));
