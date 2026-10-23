@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ponytail Generator</title>
+<title>Alphagen</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
   .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
@@ -21,7 +21,7 @@
 </style>
 </head>
 <body>
-<h1>Generator</h1>
+<h1>Alphagen</h1>
 
 <section class="card">
   <h2>IMEI</h2>
@@ -170,7 +170,7 @@ function phone() {
 console.assert(/^[2-9]\d{2}[2-9]\d{6}$/.test(phone()), 'phone self-check failed');
 
 // History
-const KEY = 'ponytail-history';
+const KEY = 'alphagen-history';
 // shortcut: history grows unbounded in localStorage (~5MB), add a cap or a clear button if it ever fills up
 let history = JSON.parse(localStorage.getItem(KEY) || '[]');
 const pad = n => String(n).padStart(2, '0');
