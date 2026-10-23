@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ponytail Generator</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  .card h2 { margin: 0 0 .5rem; font-size: 1.1rem; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .out { flex: 1; min-width: 220px; font: 1rem monospace; padding: .4rem; }
+  button { padding: .4rem .8rem; cursor: pointer; }
+  [aria-pressed="true"] { background: #2563eb; color: #fff; border-color: #2563eb; }
+  dialog { max-width: 700px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: .25rem; margin-bottom: 1rem; }
+  .toggles button { min-width: 3.2rem; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: .3rem; border-bottom: 1px solid #eee; }
+  td.v { font-family: monospace; }
+</style>
+</head>
+<body>
+<h1>Generator</h1>
+
+<section class="card">
+  <h2>IMEI</h2>
+  <div class="row">
+    <div class="toggles" role="group" aria-label="IMEI type" id="imeiType" style="margin:0">
+      <button type="button" aria-pressed="true" data-v="generic">Generic</button>
+      <button type="button" aria-pressed="false" data-v="iphone">iPhone</button>
+    </div>
+    <input class="out" id="imeiOut" readonly aria-label="IMEI">
+    <button id="imeiGen">Generate</button>
+    <button data-copy="imeiOut">Copy</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Address (US / Canada)</h2>
+  <div class="row">
+    <button id="stateBtn">States: <span id="stateSummary">Any</span></button>
+    <input class="out" id="addrOut" readonly aria-label="Address">
+    <button id="addrGen">Generate</button>
+    <button data-copy="addrOut">Copy</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Phone (US / Canada)</h2>
+  <div class="row">
+    <input class="out" id="phoneOut" readonly aria-label="Phone">
+    <button id="phoneGen">Generate</button>
+    <button data-copy="phoneOut">Copy</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>History</h2>
+  <div class="row" style="margin-bottom:.5rem">
+    <input id="filter" placeholder="dd/mm/yyyy hh:mm" aria-label="Filter by date" style="flex:1;padding:.4rem">
+    <button id="filterClear" aria-label="Clear filter">✕</button>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Type</th><th>Value</th><th></th></tr></thead>
+    <tbody id="history"></tbody>
+  </table>
+</section>
+
+<dialog id="stateDialog">
+  <form method="dialog">
+    <p>Select states / provinces (none selected = any).</p>
+    <h3>United States</h3>
+    <div class="toggles" role="group" aria-label="US states" id="usToggles"></div>
+    <h3>Canada</h3>
+    <div class="toggles" role="group" aria-label="Canadian provinces" id="caToggles"></div>
+    <div class="row">
+      <button type="button" id="stateNone">Clear selection</button>
+      <button>Done</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const digits = n => Array.from({ length: n }, () => rnd(10)).join('');
+
+// Luhn check digit for the 14-digit IMEI body
+function luhn(s) {
+  let sum = 0;
+  for (let i = 0; i < s.length; i++) {
+    let d = +s[s.length - 1 - i];
+    if (i % 2 === 0) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+  }
+  return (10 - sum % 10) % 10;
+}
+console.assert(luhn('49015420323751') === 8, 'luhn self-check failed');
+
+// shortcut: small sample of Apple TACs, extend the list if specific models are needed
+const APPLE_TACS = ['35325807', '35391805', '35332508', '35407115', '35699206', '35287211', '35346211', '35395910', '35672011', '35303611'];
+function imei(type) {
+  const tac = type === 'iphone' ? pick(APPLE_TACS) : pick(['35', '86', '01']) + digits(6);
+  const body = tac + digits(6);
+  return body + luhn(body);
+}
+
+// City + real ZIP (US) or FSA (Canada); the last token is the postal part
+const US = {
+  AL: 'Birmingham 35203|Montgomery 36104', AK: 'Anchorage 99501|Fairbanks 99701', AZ: 'Phoenix 85004|Tucson 85701',
+  AR: 'Little Rock 72201|Fayetteville 72701', CA: 'Los Angeles 90012|San Francisco 94103|San Diego 92101',
+  CO: 'Denver 80202|Colorado Springs 80903', CT: 'Hartford 06103|New Haven 06510', DE: 'Wilmington 19801|Dover 19901',
+  DC: 'Washington 20001', FL: 'Miami 33130|Orlando 32801|Tampa 33602', GA: 'Atlanta 30303|Savannah 31401',
+  HI: 'Honolulu 96813|Hilo 96720', ID: 'Boise 83702|Idaho Falls 83402', IL: 'Chicago 60601|Springfield 62701',
+  IN: 'Indianapolis 46204|Fort Wayne 46802', IA: 'Des Moines 50309|Cedar Rapids 52401', KS: 'Wichita 67202|Topeka 66603',
+  KY: 'Louisville 40202|Lexington 40507', LA: 'New Orleans 70112|Baton Rouge 70801', ME: 'Portland 04101|Bangor 04401',
+  MD: 'Baltimore 21201|Annapolis 21401', MA: 'Boston 02108|Worcester 01608', MI: 'Detroit 48226|Grand Rapids 49503',
+  MN: 'Minneapolis 55401|Saint Paul 55102', MS: 'Jackson 39201|Gulfport 39501', MO: 'Kansas City 64106|St. Louis 63101',
+  MT: 'Billings 59101|Missoula 59802', NE: 'Omaha 68102|Lincoln 68508', NV: 'Las Vegas 89101|Reno 89501',
+  NH: 'Manchester 03101|Concord 03301', NJ: 'Newark 07102|Jersey City 07302', NM: 'Albuquerque 87102|Santa Fe 87501',
+  NY: 'New York 10001|Buffalo 14202', NC: 'Charlotte 28202|Raleigh 27601', ND: 'Fargo 58102|Bismarck 58501',
+  OH: 'Columbus 43215|Cleveland 44114', OK: 'Oklahoma City 73102|Tulsa 74103', OR: 'Portland 97204|Eugene 97401',
+  PA: 'Philadelphia 19107|Pittsburgh 15222', RI: 'Providence 02903|Warwick 02886', SC: 'Columbia 29201|Charleston 29401',
+  SD: 'Sioux Falls 57104|Rapid City 57701', TN: 'Nashville 37203|Memphis 38103', TX: 'Houston 77002|Dallas 75201|Austin 78701',
+  UT: 'Salt Lake City 84111|Provo 84601', VT: 'Burlington 05401|Montpelier 05602', VA: 'Richmond 23219|Virginia Beach 23451',
+  WA: 'Seattle 98101|Spokane 99201', WV: 'Charleston 25301|Morgantown 26501', WI: 'Milwaukee 53202|Madison 53703',
+  WY: 'Cheyenne 82001|Casper 82601',
+};
+const CA = {
+  AB: 'Calgary T2P|Edmonton T5J', BC: 'Vancouver V6B|Victoria V8W', MB: 'Winnipeg R3C|Brandon R7A',
+  NB: 'Moncton E1C|Fredericton E3B', NL: "St. John's A1C|Corner Brook A2H", NS: 'Halifax B3H|Sydney B1P',
+  NT: 'Yellowknife X1A', NU: 'Iqaluit X0A', ON: 'Toronto M5V|Ottawa K1P', PE: 'Charlottetown C1A',
+  QC: 'Montreal H2Y|Quebec City G1R', SK: 'Saskatoon S7K|Regina S4P', YT: 'Whitehorse Y1A',
+};
+const STREETS = ['Main St', 'Oak Ave', 'Maple Dr', 'Cedar Ln', 'Pine St', 'Elm St', 'Washington Ave', 'Lake Rd', 'Hill St', 'Park Ave', '2nd St', 'Church St'];
+const POSTAL_LETTERS = 'ABCEGHJKLMNPRSTVWXYZ'; // Canada never uses D F I O Q U
+
+function address(selected) {
+  const code = selected.length ? pick(selected) : pick([...Object.keys(US), ...Object.keys(CA)]);
+  const isCA = code in CA;
+  const entry = pick((isCA ? CA : US)[code].split('|'));
+  const cut = entry.lastIndexOf(' ');
+  const city = entry.slice(0, cut), post = entry.slice(cut + 1);
+  const postal = isCA ? `${post} ${rnd(10)}${pick(POSTAL_LETTERS)}${rnd(10)}` : post;
+  return `${1 + rnd(9999)} ${pick(STREETS)}, ${city}, ${code} ${postal}`;
+}
+
+// Real, assigned area codes (US + Canada)
+const AREA = ('205 907 602 501 213 415 619 303 203 302 202 305 407 404 808 208 312 317 515 316 502 504 207 410 617 313 612 601 816 406 402 702 603 201 505 212 704 701 614 405 503 215 401 803 605 615 713 214 512 469 801 802 804 206 304 414 307 '
+  + '403 780 604 250 204 506 709 902 867 416 647 613 514 418 306 905').split(' ');
+function phone() {
+  let ex;
+  do ex = String(2 + rnd(8)) + digits(2); while (ex.endsWith('11') || ex === '555'); // N11 and 555 are not real exchanges
+  return pick(AREA) + ex + digits(4);
+}
+console.assert(/^[2-9]\d{2}[2-9]\d{6}$/.test(phone()), 'phone self-check failed');
+
+// History
+const KEY = 'ponytail-history';
+// shortcut: history grows unbounded in localStorage (~5MB), add a cap or a clear button if it ever fills up
+let history = JSON.parse(localStorage.getItem(KEY) || '[]');
+const pad = n => String(n).padStart(2, '0');
+const fmt = ts => { const d = new Date(ts); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+
+function copy(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => btn.textContent = old, 1000);
+  });
+}
+
+function render() {
+  const f = $('filter').value.trim();
+  $('history').replaceChildren(...history.filter(h => fmt(h.ts).startsWith(f)).map(h => {
+    const tr = document.createElement('tr');
+    for (const [t, cls] of [[fmt(h.ts)], [h.type], [h.value, 'v']]) {
+      const td = tr.insertCell();
+      td.textContent = t;
+      if (cls) td.className = cls;
+    }
+    const b = document.createElement('button');
+    b.textContent = 'Copy';
+    b.onclick = () => copy(h.value, b);
+    tr.insertCell().append(b);
+    return tr;
+  }));
+}
+
+function generate(type, outId, value) {
+  $(outId).value = value;
+  history.unshift({ type, value, ts: Date.now() });
+  localStorage.setItem(KEY, JSON.stringify(history));
+  render();
+}
+
+// Toggle groups
+const pressed = el => el.getAttribute('aria-pressed') === 'true';
+$('imeiType').onclick = e => {
+  if (!e.target.dataset.v) return;
+  for (const b of $('imeiType').children) b.setAttribute('aria-pressed', b === e.target);
+};
+for (const [id, data] of [['usToggles', US], ['caToggles', CA]]) {
+  for (const code of Object.keys(data)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = code;
+    b.title = data[code].split('|').map(c => c.slice(0, c.lastIndexOf(' '))).join(', ');
+    b.setAttribute('aria-pressed', 'false');
+    b.onclick = () => b.setAttribute('aria-pressed', !pressed(b));
+    $(id).append(b);
+  }
+}
+const stateButtons = () => [...document.querySelectorAll('#usToggles button, #caToggles button')];
+const selectedStates = () => stateButtons().filter(pressed).map(b => b.textContent);
+$('stateBtn').onclick = () => $('stateDialog').showModal();
+$('stateNone').onclick = () => stateButtons().forEach(b => b.setAttribute('aria-pressed', 'false'));
+$('stateDialog').onclose = () => $('stateSummary').textContent = selectedStates().join(', ') || 'Any';
+
+// Buttons
+$('imeiGen').onclick = () => {
+  const type = document.querySelector('#imeiType [aria-pressed="true"]').dataset.v;
+  generate(type === 'iphone' ? 'IMEI (iPhone)' : 'IMEI', 'imeiOut', imei(type));
+};
+$('addrGen').onclick = () => generate('Address', 'addrOut', address(selectedStates()));
+$('phoneGen').onclick = () => generate('Phone', 'phoneOut', phone());
+document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => $(b.dataset.copy).value && copy($(b.dataset.copy).value, b));
+$('filter').oninput = render;
+$('filterClear').onclick = () => { $('filter').value = ''; render(); $('filter').focus(); };
+
+render();
+</script>
+</body>
+</html>
