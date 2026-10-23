@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alphagen</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-maskable-512.png">
+<meta name="theme-color" content="#5a67d8">
 <style>
   :root { --accent: #5a67d8; --border: #e5e7eb; --muted: #6b7280; }
   html { background: linear-gradient(135deg, #eef2ff, #faf5ff) fixed; }
@@ -123,6 +126,7 @@
 <script>
 const $ = id => document.getElementById(id);
 $('year').textContent = new Date().getFullYear();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 const rnd = n => Math.floor(Math.random() * n);
 const pick = a => a[rnd(a.length)];
 const digits = n => Array.from({ length: n }, () => rnd(10)).join('');
