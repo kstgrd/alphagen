@@ -31,8 +31,7 @@
       <button type="button" aria-pressed="false" data-v="iphone">iPhone</button>
     </div>
     <input class="out" id="imeiOut" readonly aria-label="IMEI">
-    <button id="imeiGen">Generate</button>
-    <button data-copy="imeiOut">Copy</button>
+    <button id="imeiGen">Generate &amp; Copy</button>
   </div>
 </section>
 
@@ -41,8 +40,7 @@
   <div class="row">
     <button id="stateBtn">States: <span id="stateSummary">Any</span></button>
     <input class="out" id="addrOut" readonly aria-label="Address">
-    <button id="addrGen">Generate</button>
-    <button data-copy="addrOut">Copy</button>
+    <button id="addrGen">Generate &amp; Copy</button>
   </div>
 </section>
 
@@ -50,8 +48,7 @@
   <h2>Phone (US / Canada)</h2>
   <div class="row">
     <input class="out" id="phoneOut" readonly aria-label="Phone">
-    <button id="phoneGen">Generate</button>
-    <button data-copy="phoneOut">Copy</button>
+    <button id="phoneGen">Generate &amp; Copy</button>
   </div>
 </section>
 
@@ -178,7 +175,7 @@ const fmt = ts => { const d = new Date(ts); return `${pad(d.getDate())}/${pad(d.
 
 function copy(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
-    const old = btn.textContent;
+    const old = btn.dataset.label ??= btn.textContent; // keep the real label across rapid clicks
     btn.textContent = 'Copied';
     setTimeout(() => btn.textContent = old, 1000);
   });
@@ -201,8 +198,9 @@ function render() {
   }));
 }
 
-function generate(type, outId, value) {
+function generate(type, outId, value, btn) {
   $(outId).value = value;
+  copy(value, btn);
   history.unshift({ type, value, ts: Date.now() });
   localStorage.setItem(KEY, JSON.stringify(history));
   render();
@@ -234,11 +232,10 @@ $('stateDialog').onclose = () => $('stateSummary').textContent = selectedStates(
 // Buttons
 $('imeiGen').onclick = () => {
   const type = document.querySelector('#imeiType [aria-pressed="true"]').dataset.v;
-  generate(type === 'iphone' ? 'IMEI (iPhone)' : 'IMEI', 'imeiOut', imei(type));
+  generate(type === 'iphone' ? 'IMEI (iPhone)' : 'IMEI', 'imeiOut', imei(type), $('imeiGen'));
 };
-$('addrGen').onclick = () => generate('Address', 'addrOut', `${fullName()}, ${address(selectedStates())}`);
-$('phoneGen').onclick = () => generate('Phone', 'phoneOut', phone());
-document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => $(b.dataset.copy).value && copy($(b.dataset.copy).value, b));
+$('addrGen').onclick = () => generate('Address', 'addrOut', `${fullName()}, ${address(selectedStates())}`, $('addrGen'));
+$('phoneGen').onclick = () => generate('Phone', 'phoneOut', phone(), $('phoneGen'));
 $('filter').oninput = render;
 $('filterClear').onclick = () => { $('filter').value = ''; render(); $('filter').focus(); };
 
